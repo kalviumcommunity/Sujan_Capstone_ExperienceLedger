@@ -1,0 +1,198 @@
+.analytics-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.analytics-header h1 {
+  font-size: 1.6rem;
+  font-weight: 800;
+  margin-bottom: 4px;
+}
+
+.analytics-subtitle {
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+}
+
+.analytics-filters {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.analytics-filters select {
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 0.82rem;
+  background: var(--color-surface);
+}
+
+.analytics-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin: 24px 0;
+}
+
+@media (max-width: 900px) {
+  .analytics-grid { grid-template-columns: 1fr; }
+}
+
+.skill-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.skill-bar-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.83rem;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.skill-bar-track {
+  height: 8px;
+  background: var(--color-bg);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.skill-bar-fill {
+  height: 100%;
+  background: var(--color-primary);
+  border-radius: 4px;
+}
+
+.trend-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.trend-legend {
+  display: flex;
+  gap: 12px;
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+
+.trend-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.dot-ready { background: var(--color-primary); }
+.dot-progress { background: #d1d5db; }
+
+.trend-chart {
+  width: 100%;
+  height: 140px;
+}
+
+.trend-months {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.68rem;
+  color: var(--color-text-muted);
+  margin-top: 8px;
+}
+
+.cohort-table {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.cohort-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.cohort-header h3 {
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.cohort-table-head,
+.cohort-row {
+  display: grid;
+  grid-template-columns: 1.6fr 1.2fr 1fr 1.4fr 1.2fr;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 8px;
+}
+
+.cohort-table-head {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.cohort-row {
+  border-bottom: 1px solid var(--color-border);
+  font-size: 0.85rem;
+}
+
+.cohort-student {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+}
+
+.cohort-roll {
+  font-size: 0.72rem;
+  font-weight: 400;
+  color: var(--color-text-muted);
+}
+
+.readiness-bar-track {
+  position: relative;
+  background: var(--color-bg);
+  border-radius: 6px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+}
+
+.readiness-bar-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  background: #10b981;
+  border-radius: 6px;
+}
+
+.readiness-bar-label {
+  position: relative;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #fff;
+  padding-left: 8px;
+  z-index: 1;
+}
