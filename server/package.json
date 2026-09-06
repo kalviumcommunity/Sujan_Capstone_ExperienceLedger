@@ -6,9 +6,11 @@
   "scripts": {
     "dev": "nodemon index.js",
     "start": "node index.js",
-    "db:init": "node config/initDb.js"
+    "db:init": "node config/initDb.js",
+    "db:seed": "node config/seed.js"
   },
   "dependencies": {
+    "cors": "^2.8.6",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
     "pg": "^8.12.0"
