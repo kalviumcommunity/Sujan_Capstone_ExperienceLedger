@@ -1,21 +1,27 @@
 require('dotenv').config();
+const bcrypt = require('bcryptjs');
 const { pool } = require('./db');
 
 // Inserts a couple of demo users + pending experiences so the Review Queue
 // has real rows to approve/reject/delete against during local testing.
+// Both demo accounts use the password "password123".
 const seed = async () => {
   try {
+    const passwordHash = await bcrypt.hash('password123', 10);
+
     const { rows: students } = await pool.query(
       `INSERT INTO users (name, email, password, role)
-       VALUES ('Alex Rivera', 'alex.rivera@example.com', 'demo-hash', 'student')
-       ON CONFLICT (email) DO UPDATE SET name = EXCLUDED.name
-       RETURNING id`
+       VALUES ('Alex Rivera', 'alex.rivera@example.com', $1, 'student')
+       ON CONFLICT (email) DO UPDATE SET name = EXCLUDED.name, password = EXCLUDED.password
+       RETURNING id`,
+      [passwordHash]
     );
     const { rows: mentors } = await pool.query(
       `INSERT INTO users (name, email, password, role)
-       VALUES ('Dr. Sarah Jenkins', 'sarah.jenkins@example.com', 'demo-hash', 'mentor')
-       ON CONFLICT (email) DO UPDATE SET name = EXCLUDED.name
-       RETURNING id`
+       VALUES ('Dr. Sarah Jenkins', 'sarah.jenkins@example.com', $1, 'mentor')
+       ON CONFLICT (email) DO UPDATE SET name = EXCLUDED.name, password = EXCLUDED.password
+       RETURNING id`,
+      [passwordHash]
     );
 
     const studentId = students[0].id;
