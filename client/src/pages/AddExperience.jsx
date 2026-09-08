@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/useAuth';
 import { createExperience } from '../api/experiences';
 import './AddExperience.css';
 
@@ -17,7 +16,6 @@ const initialForm = {
 
 function AddExperience() {
   const navigate = useNavigate();
-  const { user } = useAuth();
   const [form, setForm] = useState(initialForm);
   const [skills, setSkills] = useState(['React', 'Python', 'TypeScript']);
   const [skillInput, setSkillInput] = useState('');
@@ -51,7 +49,6 @@ function AddExperience() {
         : `${form.startDate} - ${form.endDate}`;
 
       await createExperience({
-        student: user.id,
         type: 'internship',
         organization: form.organization,
         role: form.role,
