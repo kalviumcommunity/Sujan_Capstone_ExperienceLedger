@@ -5,7 +5,6 @@ const { pool } = require("../config/db");
 const createExperience = async (req, res) => {
   try {
     const {
-      student,
       type,
       organization,
       role,
@@ -15,19 +14,23 @@ const createExperience = async (req, res) => {
       evidenceLink,
     } = req.body;
 
-    if (!student || !type || !organization || !role) {
+    if (!type || !organization || !role) {
       return res.status(400).json({
         success: false,
-        message: "student, type, organization, and role are required fields",
+        message: "type, organization, and role are required fields",
       });
     }
+
+    // The owner is always the authenticated user from the JWT, never a client-supplied
+    // id — otherwise any logged-in user could submit an experience under someone else's account.
+    const studentId = req.user.id;
 
     const { rows } = await pool.query(
       `INSERT INTO experiences
         (student_id, type, organization, role, duration, description, outcome, evidence_link, status)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'Pending Verification')
        RETURNING *`,
-      [student, type, organization, role, duration, description, outcome, evidenceLink]
+      [studentId, type, organization, role, duration, description, outcome, evidenceLink]
     );
 
     return res.status(201).json({ success: true, data: rows[0] });
@@ -128,10 +131,24 @@ const updateExperienceStatus = async (req, res) => {
   }
 };
 
-// @desc   Delete an experience entry (DB WRITE)
+// @desc   Delete an experience entry (DB WRITE) — reviewers can delete any entry,
+//         a student can only delete their own
 // @route  DELETE /api/experiences/:id
 const deleteExperience = async (req, res) => {
   try {
+    const { rows: existing } = await pool.query(`SELECT student_id FROM experiences WHERE id = $1`, [req.params.id]);
+
+    if (!existing[0]) {
+      return res.status(404).json({ success: false, message: "Experience not found" });
+    }
+
+    const isReviewer = ["mentor", "placement_officer", "admin"].includes(req.user.role);
+    const isOwner = existing[0].student_id === req.user.id;
+
+    if (!isReviewer && !isOwner) {
+      return res.status(403).json({ success: false, message: "You can only delete your own experiences" });
+    }
+
     const { rows } = await pool.query(`DELETE FROM experiences WHERE id = $1 RETURNING id`, [req.params.id]);
 
     if (!rows[0]) {
