@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Link, Navigate, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
 import AddExperience from './pages/AddExperience';
@@ -13,123 +13,55 @@ import UserManagement from './pages/UserManagement';
 import NotFound from './pages/NotFound';
 import { AuthProvider } from './context/AuthContext';
 import { useAuth } from './context/useAuth';
-import { currentReviewer, currentAdmin } from './data/mockData';
+import { STUDENT, REVIEWERS, PLACEMENT, ADMIN, homeFor } from './roles';
 import './App.css';
 
-function initialsOf(name = '') {
-  return name
-    .split(' ')
-    .map((part) => part[0])
-    .filter(Boolean)
-    .slice(0, 2)
-    .join('')
-    .toUpperCase();
-}
-
-// Maps each route to the role/persona whose sidebar + header should render.
-// Reflects that Experience Ledger has three real personas (student, mentor,
-// placement/admin) sharing one app shell, per the PRD's role-based access model.
-// Student routes resolve `user` to the real authenticated account at render time (see
-// AppRoutes) instead of a fixed mock, since this persona IS the actual logged-in user -
-// unlike Mentor/Placement Cell, which are demo-only previews anyone can switch into.
+// Every page is gated by the logged-in account's REAL role. (This replaces the old
+// "Preview as" switcher, which let any student open the mentor/admin screens with
+// hard-coded demo identities.) The server enforces the same rules on every API call.
 const ROUTE_CONFIG = [
-  { path: '/', role: 'student', element: <Dashboard /> },
-  { path: '/add-experience', role: 'student', element: <AddExperience /> },
-  { path: '/my-experiences', role: 'student', element: <MyExperiences /> },
-  { path: '/export-profile', role: 'student', element: <ExportProfile /> },
-  { path: '/review-queue', role: 'reviewer', user: currentReviewer, element: <ReviewQueue /> },
-  { path: '/analytics', role: 'admin', user: currentAdmin, element: <Analytics /> },
-  { path: '/student-records', role: 'admin', user: currentAdmin, element: <StudentRecords /> },
-  // Unlike the other admin-persona routes above (demo previews anyone can switch into),
-  // this one performs real role mutations on real accounts - gated by the actually
-  // logged-in user's real role below, not just the "Preview as" persona.
-  { path: '/user-management', role: 'admin', user: currentAdmin, element: <UserManagement />, requireRealAdmin: true },
+  { path: '/', roles: STUDENT, element: <Dashboard /> },
+  { path: '/add-experience', roles: STUDENT, element: <AddExperience /> },
+  { path: '/edit-experience/:id', roles: STUDENT, element: <AddExperience /> },
+  { path: '/my-experiences', roles: STUDENT, element: <MyExperiences /> },
+  { path: '/export-profile', roles: STUDENT, element: <ExportProfile /> },
+  { path: '/review-queue', roles: REVIEWERS, element: <ReviewQueue /> },
+  { path: '/analytics', roles: PLACEMENT, element: <Analytics /> },
+  { path: '/student-records', roles: PLACEMENT, element: <StudentRecords /> },
+  { path: '/user-management', roles: ADMIN, element: <UserManagement /> },
 ];
 
-function RoleSwitcher() {
-  const location = useLocation();
-  const links = [
-    { to: '/', label: 'Student View' },
-    { to: '/review-queue', label: 'Mentor View' },
-    { to: '/analytics', label: 'Placement Cell View' },
-  ];
-
-  return (
-    <div className="role-switcher">
-      <span className="role-switcher-label">Preview as:</span>
-      {links.map((link) => (
-        <Link
-          key={link.to}
-          to={link.to}
-          className={'role-switcher-link' + (location.pathname === link.to ? ' role-switcher-link-active' : '')}
-        >
-          {link.label}
-        </Link>
-      ))}
-    </div>
-  );
-}
-
-function RequireAuth({ children }) {
+function RequireRole({ roles, children }) {
   const { isAuthenticated, user } = useAuth();
   const location = useLocation();
 
-  // Require both a token AND a parsed user object - a token with no user (e.g. corrupted
-  // localStorage) would otherwise crash every page that reads user.name unconditionally.
-  if (!isAuthenticated || !user) {
+  if (!isAuthenticated) {
     return <Navigate to="/login" replace state={{ from: location.pathname }} />;
   }
-
-  return children;
-}
-
-// Unlike RequireAuth, this checks the real authenticated account's role (not the
-// "Preview as" persona) - for routes like /user-management that mutate real accounts,
-// where every other role must be turned away regardless of which demo view they're on.
-function RequireRealAdmin({ children }) {
-  const { user } = useAuth();
-
-  if (user?.role !== 'admin') {
-    return <Navigate to="/" replace />;
+  // Logged in but not allowed here (e.g. a mentor opening "/") - send them to
+  // their own landing page rather than showing a page whose API calls would 403.
+  if (!roles.includes(user.role)) {
+    return <Navigate to={homeFor(user.role)} replace />;
   }
-
   return children;
 }
 
 function AppRoutes() {
-  const { user: authUser } = useAuth();
-
-  // Real logged-in identity for the Student persona - Mentor/Placement Cell stay mock
-  // since they're demo-only previews, not a role you can actually authenticate as here.
-  const studentUser = authUser && {
-    name: authUser.name,
-    role: 'Student',
-    avatarInitials: initialsOf(authUser.name),
-  };
-
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
-      {ROUTE_CONFIG.map(({ path, role, user, element, requireRealAdmin }) => {
-        const page = (
-          <Layout role={role} user={role === 'student' ? studentUser : user}>
-            <RoleSwitcher />
-            {element}
-          </Layout>
-        );
-        return (
-          <Route
-            key={path}
-            path={path}
-            element={
-              <RequireAuth>
-                {requireRealAdmin ? <RequireRealAdmin>{page}</RequireRealAdmin> : page}
-              </RequireAuth>
-            }
-          />
-        );
-      })}
+      {ROUTE_CONFIG.map(({ path, roles, element }) => (
+        <Route
+          key={path}
+          path={path}
+          element={
+            <RequireRole roles={roles}>
+              <Layout>{element}</Layout>
+            </RequireRole>
+          }
+        />
+      ))}
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

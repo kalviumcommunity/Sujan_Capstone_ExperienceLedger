@@ -1,19 +1,13 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/useAuth';
 import GoogleSignInButton from '../components/GoogleSignInButton';
+import { homeFor } from '../roles';
 import './Auth.css';
 
-const ROLES = [
-  { value: 'student', label: 'Student' },
-  { value: 'mentor', label: 'Mentor' },
-  { value: 'placement_officer', label: 'Placement Officer' },
-];
-
 function Register() {
-  const { register } = useAuth();
-  const navigate = useNavigate();
-  const [form, setForm] = useState({ name: '', email: '', password: '', role: 'student' });
+  const { register, isAuthenticated, user } = useAuth();
+  const [form, setForm] = useState({ name: '', email: '', password: '' });
   const [error, setError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -24,14 +18,15 @@ function Register() {
     setSubmitting(true);
     setError(null);
     try {
-      await register(form.name, form.email, form.password, form.role);
-      navigate('/', { replace: true });
+      await register(form.name, form.email, form.password); // redirect below fires on auth change
     } catch (err) {
       setError(err.message);
     } finally {
       setSubmitting(false);
     }
   };
+
+  if (isAuthenticated) return <Navigate to={homeFor(user.role)} replace />;
 
   return (
     <div className="auth-screen">
@@ -58,19 +53,15 @@ function Register() {
               type="password"
               required
               minLength={6}
+              placeholder="At least 6 characters"
               value={form.password}
               onChange={updateField('password')}
               autoComplete="new-password"
             />
           </div>
-          <div className="auth-field">
-            <label htmlFor="role">I am a</label>
-            <select id="role" value={form.role} onChange={updateField('role')}>
-              {ROLES.map((r) => (
-                <option key={r.value} value={r.value}>{r.label}</option>
-              ))}
-            </select>
-          </div>
+          <p className="form-hint" style={{ marginBottom: 12 }}>
+            New accounts are student accounts. Mentors and placement officers are given access by an admin.
+          </p>
           <button type="submit" className="btn-primary" style={{ width: '100%' }} disabled={submitting}>
             {submitting ? 'Creating account…' : 'Create Account'}
           </button>
@@ -79,7 +70,6 @@ function Register() {
         <div className="auth-divider"><span>or</span></div>
 
         <GoogleSignInButton
-          onSuccess={() => navigate('/', { replace: true })}
           onError={setError}
         />
 

@@ -1,12 +1,12 @@
 import { useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/useAuth';
 import GoogleSignInButton from '../components/GoogleSignInButton';
+import { homeFor } from '../roles';
 import './Auth.css';
 
 function Login() {
-  const { login } = useAuth();
-  const navigate = useNavigate();
+  const { login, isAuthenticated, user } = useAuth();
   const location = useLocation();
   const [form, setForm] = useState({ email: '', password: '' });
   const [error, setError] = useState(null);
@@ -19,14 +19,17 @@ function Login() {
     setSubmitting(true);
     setError(null);
     try {
-      await login(form.email, form.password);
-      navigate(location.state?.from ?? '/', { replace: true });
+      await login(form.email, form.password); // the redirect below fires once auth state updates
     } catch (err) {
       setError(err.message);
     } finally {
       setSubmitting(false);
     }
   };
+
+  // Logged in (just now, or already): go back to the page that bounced the user here,
+  // else to their role's home. RequireRole re-checks access on arrival.
+  if (isAuthenticated) return <Navigate to={location.state?.from ?? homeFor(user.role)} replace />;
 
   return (
     <div className="auth-screen">
@@ -54,7 +57,6 @@ function Login() {
         <div className="auth-divider"><span>or</span></div>
 
         <GoogleSignInButton
-          onSuccess={() => navigate(location.state?.from ?? '/', { replace: true })}
           onError={setError}
         />
 
@@ -64,7 +66,8 @@ function Login() {
 
         <div className="auth-demo-hint">
           Demo accounts (after <code>npm run db:seed</code>): <br />
-          alex.rivera@example.com / sarah.jenkins@example.com — password: <code>password123</code>
+          Student alex.rivera@example.com · Mentor sarah.jenkins@example.com · Placement placement@example.com ·
+          Admin admin@example.com — password: <code>password123</code>
         </div>
       </div>
     </div>

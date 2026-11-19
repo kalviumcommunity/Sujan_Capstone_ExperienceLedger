@@ -1,36 +1,9 @@
 import { NavLink } from 'react-router-dom';
+import { navItemsFor, ROLE_LABEL } from '../roles';
 import './Sidebar.css';
 
-// Each role's "Dashboard" points at that role's own landing page, not a shared "/" -
-// otherwise navigating there from a Mentor/Admin view would silently drop back into
-// the Student dashboard's content, since "/" only ever renders the student persona.
-const NAV_ITEMS = {
-  student: [
-    { to: '/', label: 'Dashboard', icon: '▦' },
-    { to: '/my-experiences', label: 'My Experiences', icon: '⇄' },
-    { to: '/export-profile', label: 'Export Profile', icon: '▤' },
-  ],
-  reviewer: [
-    { to: '/review-queue', label: 'Dashboard', icon: '▦' },
-    { to: '/export-profile', label: 'Export Profile', icon: '▤' },
-  ],
-  admin: [
-    { to: '/analytics', label: 'Dashboard', icon: '▦' },
-    { to: '/student-records', label: 'Student Records', icon: '☰' },
-    { to: '/user-management', label: 'User Management', icon: '⚙' },
-    { to: '/export-profile', label: 'Export Profile', icon: '▤' },
-  ],
-};
-
-const FOOTER_CONTENT = {
-  student: { title: 'Status: Premium', subtitle: 'Account fully verified' },
-  reviewer: { title: 'Dr. Sarah Jenkins', subtitle: 'Senior Mentor' },
-  admin: { title: 'Admin Officer', subtitle: 'Placement Cell' },
-};
-
-function Sidebar({ role = 'student', open = false, onClose }) {
-  const items = NAV_ITEMS[role] || NAV_ITEMS.student;
-  const footer = FOOTER_CONTENT[role] || FOOTER_CONTENT.student;
+function Sidebar({ user, open = false, onClose }) {
+  const items = navItemsFor(user.role);
 
   return (
     <aside className={'sidebar' + (open ? ' sidebar-open' : '')}>
@@ -57,8 +30,8 @@ function Sidebar({ role = 'student', open = false, onClose }) {
       <div className="sidebar-footer">
         <div className="sidebar-footer-badge" aria-hidden="true">✓</div>
         <div>
-          <div className="sidebar-footer-title">{footer.title}</div>
-          <div className="sidebar-footer-subtitle">{footer.subtitle}</div>
+          <div className="sidebar-footer-title">{user.name}</div>
+          <div className="sidebar-footer-subtitle">{ROLE_LABEL[user.role] || user.role}</div>
         </div>
       </div>
     </aside>

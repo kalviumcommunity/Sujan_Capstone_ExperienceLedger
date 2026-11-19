@@ -2,7 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import StatCard from '../components/StatCard';
 import { fetchExperiences } from '../api/experiences';
-import { statusCounts, avgReviewDays, monthlyTrend, groupByStudent } from '../utils/experienceStats';
+import { statusCounts, avgReviewDays, monthlyTrend, groupByStudent, topSkills } from '../utils/experienceStats';
+import { initialsOf } from '../roles';
 import './Analytics.css';
 
 const COHORT_PREVIEW_LIMIT = 5;
@@ -35,6 +36,7 @@ function Analytics() {
   const trend = useMemo(() => monthlyTrend(experiences), [experiences]);
   const cohort = useMemo(() => groupByStudent(experiences), [experiences]);
   const reviewDays = useMemo(() => avgReviewDays(experiences), [experiences]);
+  const skills = useMemo(() => topSkills(experiences), [experiences]);
 
   const orgCount = new Set(experiences.map((e) => e.organization)).size;
   const readyPercent = counts.total > 0 ? Math.round((counts.approved / counts.total) * 100) : 0;
@@ -57,7 +59,7 @@ function Analytics() {
           <div className="dashboard-stats">
             <StatCard label="Verified Experiences" value={counts.approved} />
             <StatCard label="Avg. Mentor Review" value={reviewDays === null ? '—' : reviewDays.toFixed(1)} unit={reviewDays === null ? '' : 'DAYS'} />
-            <StatCard label="Placement-Ready" value={`${readyPercent}%`} />
+            <StatCard label="Approval Rate" value={`${readyPercent}%`} />
             <StatCard label="Organizations" value={orgCount} />
           </div>
 
@@ -86,6 +88,27 @@ function Analytics() {
                 </>
               )}
             </section>
+
+            <section className="side-card">
+              <div className="trend-header">
+                <h3>Top Verified Skills</h3>
+              </div>
+              {skills.length === 0 ? (
+                <p className="analytics-subtitle">No skills on approved experiences yet.</p>
+              ) : (
+                <ul className="top-skills">
+                  {skills.map((skill) => (
+                    <li key={skill.name} className="top-skill-row">
+                      <span>{skill.name}</span>
+                      <span className="top-skill-track">
+                        <span className="top-skill-fill" style={{ width: `${(skill.count / skills[0].count) * 100}%` }} />
+                      </span>
+                      <span className="top-skill-count">{skill.count}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
           </div>
 
           <section className="cohort-table">
@@ -111,7 +134,7 @@ function Analytics() {
                 <div key={student.id} className="cohort-row">
                   <span className="cohort-student">
                     <span className="review-avatar">
-                      {student.name?.split(' ').map((n) => n[0]).join('').toUpperCase()}
+                      {initialsOf(student.name)}
                     </span>
                     <span>{student.name}</span>
                   </span>
