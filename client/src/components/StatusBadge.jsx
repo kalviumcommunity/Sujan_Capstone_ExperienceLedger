@@ -10,7 +10,7 @@ const STATUS_CLASS = {
   Rejected: 'badge-rejected',
 };
 
-function StatusBadge({ status }) {
+function StatusBadge({ status = 'Unknown' }) {
   const className = STATUS_CLASS[status] || 'badge-default';
   return <span className={`status-badge ${className}`}>{status.toUpperCase()}</span>;
 }

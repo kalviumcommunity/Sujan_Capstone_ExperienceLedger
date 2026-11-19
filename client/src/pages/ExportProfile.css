@@ -44,7 +44,6 @@
 @media print {
   .app-layout > aside,
   .app-header,
-  .role-switcher,
   .export-profile-print-btn {
     display: none !important;
   }

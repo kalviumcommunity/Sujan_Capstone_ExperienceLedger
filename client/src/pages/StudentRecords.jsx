@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { fetchExperiences } from '../api/experiences';
 import { groupByStudent } from '../utils/experienceStats';
+import { initialsOf } from '../roles';
 import './Analytics.css';
 
 function StudentRecords() {
@@ -62,7 +63,7 @@ function StudentRecords() {
               <div key={student.id} className="cohort-row">
                 <span className="cohort-student">
                   <span className="review-avatar">
-                    {student.name?.split(' ').map((n) => n[0]).join('').toUpperCase()}
+                    {initialsOf(student.name)}
                   </span>
                   <span>{student.name}</span>
                 </span>

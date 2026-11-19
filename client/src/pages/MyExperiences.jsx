@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import StatusBadge from '../components/StatusBadge';
-import { useAuth } from '../context/useAuth';
 import { fetchExperiences, deleteExperience } from '../api/experiences';
 import { resolveFileUrl } from '../api/uploads';
 import './ReviewQueue.css';
@@ -16,7 +15,7 @@ function isUploadedFile(link) {
 }
 
 function MyExperiences() {
-  const { user } = useAuth();
+  const navigate = useNavigate();
   const [experiences, setExperiences] = useState([]);
   const [expandedId, setExpandedId] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -26,7 +25,7 @@ function MyExperiences() {
   useEffect(() => {
     let cancelled = false;
 
-    fetchExperiences({ student: user.id })
+    fetchExperiences() // the server already scopes a student to their own entries
       .then((data) => {
         if (cancelled) return;
         setExperiences(data);
@@ -42,7 +41,7 @@ function MyExperiences() {
     return () => {
       cancelled = true;
     };
-  }, [user.id]);
+  }, []);
 
   const toggleExpand = (id) => setExpandedId((prev) => (prev === id ? null : id));
 
@@ -107,6 +106,11 @@ function MyExperiences() {
 
                 {expandedId === item.id && (
                   <div className="review-detail">
+                    {item.skills?.length > 0 && (
+                      <div className="skill-tags">
+                        {item.skills.map((skill) => <span key={skill} className="skill-tag">{skill}</span>)}
+                      </div>
+                    )}
                     {item.description && (
                       <>
                         <label className="form-label">Description</label>
@@ -136,6 +140,11 @@ function MyExperiences() {
                       </>
                     )}
                     <div className="review-actions">
+                      {item.status !== 'Approved' && (
+                        <button className="btn-primary" onClick={() => navigate(`/edit-experience/${item.id}`)}>
+                          ✎ {item.status === 'Pending Verification' ? 'Edit Entry' : 'Edit & Resubmit'}
+                        </button>
+                      )}
                       <button
                         className="btn-danger"
                         disabled={actioningId === item.id}

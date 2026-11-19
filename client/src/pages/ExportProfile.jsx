@@ -17,7 +17,7 @@ function ExportProfile() {
   useEffect(() => {
     let cancelled = false;
 
-    fetchExperiences({ student: user.id, status: 'Approved' })
+    fetchExperiences({ status: 'Approved' })
       .then((data) => {
         if (!cancelled) setExperiences(data);
       })
@@ -31,7 +31,7 @@ function ExportProfile() {
     return () => {
       cancelled = true;
     };
-  }, [user.id]);
+  }, []);
 
   return (
     <div className="export-profile">
@@ -67,10 +67,13 @@ function ExportProfile() {
                 <h3>{item.role} — {item.organization}</h3>
               </div>
               <p className="export-profile-meta">
-                {item.duration || formatDate(item.created_at)} · Verified {formatDate(item.updated_at)}
+                {item.duration || formatDate(item.created_at)} · Verified {formatDate(item.verified_at || item.updated_at)}
               </p>
               {item.description && <p className="export-profile-text">{item.description}</p>}
               {item.outcome && <p className="export-profile-text"><strong>Outcome:</strong> {item.outcome}</p>}
+              {item.skills?.length > 0 && (
+                <p className="export-profile-text"><strong>Skills:</strong> {item.skills.join(', ')}</p>
+              )}
             </div>
           ))}
         </div>

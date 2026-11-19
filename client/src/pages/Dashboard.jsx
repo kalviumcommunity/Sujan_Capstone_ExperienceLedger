@@ -18,7 +18,7 @@ function Dashboard() {
   useEffect(() => {
     let cancelled = false;
 
-    fetchExperiences({ student: user.id })
+    fetchExperiences() // server returns only this student's entries
       .then((data) => {
         if (!cancelled) setExperiences(data);
       })
@@ -33,7 +33,7 @@ function Dashboard() {
     return () => {
       cancelled = true;
     };
-  }, [user.id]);
+  }, []);
 
   const counts = useMemo(() => statusCounts(experiences), [experiences]);
   const recentActivity = experiences.slice(0, RECENT_ACTIVITY_LIMIT);

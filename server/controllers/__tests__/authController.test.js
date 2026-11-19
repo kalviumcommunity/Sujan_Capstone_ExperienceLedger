@@ -43,14 +43,39 @@ describe('register', () => {
     expect(res.status).toHaveBeenCalledWith(409);
   });
 
-  it('rejects a public registration attempt that requests the admin role', async () => {
-    const req = { body: { name: 'Alex', email: 'alex@example.com', password: 'secret123', role: 'admin' } };
+  it.each(['admin', 'mentor', 'placement_officer'])(
+    'rejects a public registration attempt that requests the %s role',
+    async (role) => {
+      const req = { body: { name: 'Alex', email: 'alex@example.com', password: 'secret123', role } };
+      const res = mockRes();
+
+      await register(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(403);
+      expect(pool.query).not.toHaveBeenCalled();
+    }
+  );
+
+  it('rejects a password shorter than 6 characters', async () => {
+    const req = { body: { name: 'Alex', email: 'alex@example.com', password: '123' } };
     const res = mockRes();
 
     await register(req, res);
 
     expect(res.status).toHaveBeenCalledWith(400);
     expect(pool.query).not.toHaveBeenCalled();
+  });
+
+  it('stores the email trimmed and lower-cased', async () => {
+    pool.query
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [{ id: 5, name: 'Alex', email: 'alex@example.com', role: 'student' }] });
+
+    const req = { body: { name: 'Alex', email: '  Alex@Example.COM ', password: 'secret123' } };
+    await register(req, mockRes());
+
+    expect(pool.query.mock.calls[0][1]).toEqual(['alex@example.com']);
+    expect(pool.query.mock.calls[1][1][1]).toBe('alex@example.com');
   });
 
   it('hashes the password before storing it and returns a token', async () => {
@@ -100,6 +125,20 @@ describe('login', () => {
     await login(req, res);
 
     expect(res.status).toHaveBeenCalledWith(401);
+  });
+
+  it('returns 401 (not 500) for a Google-only account that has no password', async () => {
+    pool.query.mockResolvedValueOnce({
+      rows: [{ id: 5, name: 'Alex', email: 'alex@example.com', role: 'student', password: null, google_id: 'g-1' }],
+    });
+
+    const req = { body: { email: 'alex@example.com', password: 'anything' } };
+    const res = mockRes();
+
+    await login(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(401);
+    expect(res.json.mock.calls[0][0].message).toMatch(/Google/);
   });
 
   it('returns a token when the password matches', async () => {
