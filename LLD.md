@@ -69,30 +69,33 @@ Index: `(user_id, is_read)`.
 **Auth** (`/api/auth`)
 | Method | Path | Auth | Body | Response |
 |---|---|---|---|---|
-| POST | `/register` | none | `{name, email, password, role?}` | `201 {token, user}` — role restricted to `student\|mentor\|placement_officer` |
-| POST | `/login` | none | `{email, password}` | `200 {token, user}` or `401` |
-| POST | `/google` | none | `{credential}` | `200 {token, user}` — verifies Google ID token server-side |
+| POST | `/register` | none | `{name, email, password}` | `201 {token, user}` — always creates a **student**; any other `role` → `403`. Email trimmed + lower-cased, password ≥ 6 chars |
+| POST | `/login` | none | `{email, password}` | `200 {token, user}` or `401` (also `401` for Google-only accounts with no password) |
+| POST | `/google` | none | `{credential}` | `200 {token, user}` — verifies Google ID token server-side; requires `email_verified` before linking to an existing account |
 | GET | `/me` | Bearer JWT | — | `200 {user}` |
 
 **Experiences** (`/api/experiences`)
 | Method | Path | Auth | Notes |
 |---|---|---|---|
 | POST | `/` | Bearer JWT | Creates experience owned by `req.user.id`; status forced to `Pending Verification` |
-| GET | `/` | none | Optional `?student=&status=` filters |
-| GET | `/:id` | none | 404 if not found |
-| PUT | `/:id/status` | Bearer JWT + role in (mentor, placement_officer, admin) | Body `{status, mentorComment}` |
+| GET | `/` | Bearer JWT | Students: own entries only. Reviewers: all, optional `?student=&status=`. Each row includes `skills[]` |
+| GET | `/:id` | Bearer JWT | Owner or reviewer; otherwise `404`. Non-numeric id → `400` |
+| PUT | `/:id` | Bearer JWT (owner) | Edit + resubmit: resets status to `Pending Verification`. `409` if already `Approved` (locked) |
+| PUT | `/:id/status` | Bearer JWT + role in (mentor, placement_officer, admin) | Body `{status, mentorComment}`; comment required for `Rejected`/`Changes Requested`; sets `reviewed_by`, `reviewed_at`, `verified_at` (approval only); cannot review own entry (`403`) |
 | DELETE | `/:id` | Bearer JWT | Owner or reviewer role only (403 otherwise) |
 
 **Uploads** (`/api/uploads`)
 | Method | Path | Auth | Notes |
 |---|---|---|---|
-| POST | `/` | Bearer JWT | multipart field `file`; PDF/JPG/PNG only, ≤10MB (Multer `fileFilter` + `limits`); returns `{url, originalName, sizeBytes}` |
+| POST | `/` | Bearer JWT | multipart field `file`; PDF/JPG/PNG only, ≤10MB (Multer `fileFilter` + `limits`); returns `{url, originalName, sizeBytes}`. Stored extension derived from MIME type, served with `X-Content-Type-Options: nosniff` |
 
 **Users** (`/api/users`) — admin only
 | Method | Path | Auth | Notes |
 |---|---|---|---|
 | GET | `/` | Bearer JWT + role=admin | Lists all users (id, name, email, role) |
-| PATCH | `/:id/role` | Bearer JWT + role=admin | Body `{role}`, validated against allowed role list |
+| PATCH | `/:id/role` | Bearer JWT + role=admin | Body `{role}`, validated against allowed role list; an admin cannot change their own role |
+
+> **Auth note:** `protect` verifies the JWT, then loads the user's *current* role from the database on every request, so role changes and account deletion take effect immediately rather than when the 7-day token expires.
 
 ### 3. Module-Level Design
 

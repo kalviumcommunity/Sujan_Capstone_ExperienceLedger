@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { fetchUsers, updateUserRole } from '../api/users';
+import { useAuth } from '../context/useAuth';
+import { initialsOf } from '../roles';
 import './Analytics.css';
 
 const ROLES = [
@@ -9,9 +11,10 @@ const ROLES = [
   { value: 'admin', label: 'Admin' },
 ];
 
-const ROLE_LABEL = ROLES.reduce((map, r) => ({ ...map, [r.value]: r.label }), {});
+const ROLE_LABEL = Object.fromEntries(ROLES.map((r) => [r.value, r.label]));
 
 function UserManagement() {
+  const { user: me } = useAuth();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -81,7 +84,7 @@ function UserManagement() {
               <div key={u.id} className="cohort-row">
                 <span className="cohort-student">
                   <span className="review-avatar">
-                    {u.name?.split(' ').map((n) => n[0]).join('').toUpperCase()}
+                    {initialsOf(u.name)}
                   </span>
                   <span>{u.name}</span>
                 </span>
@@ -90,7 +93,9 @@ function UserManagement() {
                 <span>
                   <select
                     value={u.role}
-                    disabled={savingId === u.id}
+                    disabled={savingId === u.id || u.id === me.id}
+                    title={u.id === me.id ? 'You cannot change your own role' : undefined}
+                    aria-label={`Role for ${u.name}`}
                     onChange={(e) => handleRoleChange(u.id, e.target.value)}
                   >
                     {ROLES.map((r) => (

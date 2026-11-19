@@ -20,4 +20,21 @@ const connectDB = async () => {
   }
 };
 
-module.exports = { pool, connectDB };
+// Runs `work(client)` inside BEGIN/COMMIT on one pooled connection, rolling back on
+// any error - used where one logical write spans several tables (experience + skills).
+const withTransaction = async (work) => {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const result = await work(client);
+    await client.query('COMMIT');
+    return result;
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally {
+    client.release();
+  }
+};
+
+module.exports = { pool, connectDB, withTransaction };

@@ -12,19 +12,33 @@ export function statusCounts(experiences) {
   return counts;
 }
 
-// Average time (in days) between submission and the last status update, for
-// entries that have actually been reviewed. Uses created_at/updated_at, the
-// only timestamps the API returns - there's no separate "reviewed at" field.
+// Average time (in days) between submission and the reviewer's decision, for entries
+// that have been reviewed. Uses reviewed_at (set by the API on every decision);
+// falls back to updated_at for rows reviewed before that column existed.
 export function avgReviewDays(experiences) {
-  const reviewed = experiences.filter((e) => e.status !== 'Pending Verification' && e.updated_at && e.created_at);
+  const reviewed = experiences.filter((e) => e.status !== 'Pending Verification' && e.created_at && (e.reviewed_at || e.updated_at));
   if (reviewed.length === 0) return null;
 
   const totalDays = reviewed.reduce((sum, e) => {
-    const days = (new Date(e.updated_at) - new Date(e.created_at)) / DAY_MS;
+    const days = (new Date(e.reviewed_at || e.updated_at) - new Date(e.created_at)) / DAY_MS;
     return sum + Math.max(days, 0);
   }, 0);
 
   return totalDays / reviewed.length;
+}
+
+// Most common skills across experiences, counting VERIFIED entries only by default -
+// the whole point of the ledger is that these numbers are backed by a mentor's approval.
+export function topSkills(experiences, limit = 8, { approvedOnly = true } = {}) {
+  const counts = new Map();
+  for (const exp of experiences) {
+    if (approvedOnly && exp.status !== 'Approved') continue;
+    for (const skill of exp.skills || []) counts.set(skill, (counts.get(skill) || 0) + 1);
+  }
+  return [...counts.entries()]
+    .map(([name, count]) => ({ name, count }))
+    .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
+    .slice(0, limit);
 }
 
 // Submission volume for each of the last `months` calendar months (oldest first).

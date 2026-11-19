@@ -1,6 +1,9 @@
+import { ROLE_LABEL, initialsOf } from '../roles';
 import './Header.css';
 
-function Header({ user, searchPlaceholder = 'Search experiences...', onLogout, onMenuClick }) {
+// Shows the real logged-in account. (The old search box, bell and help buttons were
+// placeholders with no behaviour behind them, so they've been removed.)
+function Header({ user, onLogout, onMenuClick }) {
   return (
     <header className="app-header">
       {onMenuClick && (
@@ -8,25 +11,19 @@ function Header({ user, searchPlaceholder = 'Search experiences...', onLogout, o
           ☰
         </button>
       )}
-      <div className="app-header-search">
-        <span className="app-header-search-icon" aria-hidden="true">⌕</span>
-        <input type="text" placeholder={searchPlaceholder} aria-label="Search" />
-      </div>
+      <div className="app-header-spacer" />
 
       <div className="app-header-actions">
-        <button className="app-header-icon-btn" aria-label="Notifications">🔔</button>
-        <button className="app-header-icon-btn" aria-label="Help">?</button>
         <div className="app-header-user">
           <div className="app-header-user-text">
             <div className="app-header-user-name">{user.name}</div>
-            {user.studentId && <div className="app-header-user-meta">Student ID: {user.studentId}</div>}
-            {user.role && <div className="app-header-user-meta">{user.role}</div>}
+            <div className="app-header-user-meta">{ROLE_LABEL[user.role] || user.role}</div>
           </div>
-          <div className="app-header-avatar">{user.avatarInitials}</div>
+          <div className="app-header-avatar" aria-hidden="true">{initialsOf(user.name)}</div>
         </div>
         {onLogout && (
-          <button className="app-header-icon-btn" aria-label="Log out" title="Log out" onClick={onLogout}>
-            ⎋
+          <button className="app-header-logout-btn" onClick={onLogout}>
+            Log out
           </button>
         )}
       </div>

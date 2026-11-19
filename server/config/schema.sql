@@ -66,3 +66,7 @@ CREATE TABLE IF NOT EXISTS notifications (
 );
 
 CREATE INDEX IF NOT EXISTS idx_notifications_user_is_read ON notifications(user_id, is_read);
+
+-- When a reviewer last acted on an experience (approve / reject / request changes).
+-- verified_at stays reserved for approval; reviewed_at drives the "avg review time" metric.
+ALTER TABLE experiences ADD COLUMN IF NOT EXISTS reviewed_at TIMESTAMPTZ;
